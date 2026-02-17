@@ -164,3 +164,37 @@ docker compose down -v
 - [ ] Rate limiting active (100 req / 15 min window)
 - [ ] Helmet security headers present
 - [ ] Prisma migrations run on production start
+
+## Phase 1 Verification
+
+Phase 1 adds single-URL SEO analysis. After setup, verify with:
+
+```bash
+# 1. Create a project
+curl -X POST http://localhost:4000/api/projects \
+  -H "Content-Type: application/json" \
+  -d '{"name":"My Site","domain":"example.com"}'
+
+# 2. Analyze a URL (use the project id from step 1)
+curl -X POST http://localhost:4000/api/analyze-url \
+  -H "Content-Type: application/json" \
+  -d '{"projectId":"<PROJECT_ID>","url":"https://example.com"}'
+
+# 3. Retrieve a stored record
+curl http://localhost:4000/api/url-records/<RECORD_ID>
+
+# 4. Retrieve a crawl run summary
+curl http://localhost:4000/api/crawl-runs/<CRAWL_RUN_ID>
+```
+
+Phase 1 Checklist:
+
+- [ ] `POST /api/projects` creates a project
+- [ ] `GET /api/projects` lists projects
+- [ ] `POST /api/analyze-url` fetches, parses, and stores SEO signals
+- [ ] Response includes statusCode, title, canonical, h1Count, wordCount, issues
+- [ ] `GET /api/url-records/:id` returns stored record
+- [ ] `GET /api/crawl-runs/:id` returns crawl run with records
+- [ ] Frontend `/projects` page creates and lists projects
+- [ ] Frontend `/analyze` page runs analysis and displays results
+- [ ] Export JSON button downloads analysis as .json file
