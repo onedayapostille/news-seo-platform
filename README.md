@@ -23,6 +23,14 @@ news-seo-platform/
 │   └── src/
 │       ├── index.ts           # Express app entry
 │       ├── prisma.ts          # Prisma client singleton
+│       ├── config/
+│       │   └── env.ts         # centralized env config
+│       ├── routes/
+│       │   ├── index.ts       # route aggregator
+│       │   └── health.ts      # GET /health
+│       ├── services/
+│       │   └── health.ts      # health check logic
+│       ├── modules/           # feature modules (future)
 │       └── middleware/
 │           └── errorHandler.ts
 │
@@ -37,6 +45,8 @@ news-seo-platform/
     └── src/
         ├── main.tsx
         ├── App.tsx            # health check UI
+        ├── api/
+        │   └── health.ts     # API client for /api/health
         ├── index.css
         └── vite-env.d.ts
 ```

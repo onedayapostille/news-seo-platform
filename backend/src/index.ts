@@ -3,34 +3,27 @@ import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
 import rateLimit from "express-rate-limit";
-import { prisma } from "./prisma";
+import { env } from "./config/env";
+import routes from "./routes";
 import { errorHandler } from "./middleware/errorHandler";
 
 const app = express();
-const port = parseInt(process.env.PORT || "4000", 10);
 
 // --------------- Middleware ---------------
 
 app.use(helmet());
-app.use(morgan("combined"));
+app.use(morgan(env.nodeEnv === "production" ? "combined" : "dev"));
 app.use(express.json());
-
-// CORS – accepts comma-separated origins from ENV
-const allowedOrigins = (process.env.CORS_ORIGINS || "")
-  .split(",")
-  .map((o) => o.trim())
-  .filter(Boolean);
 
 app.use(
   cors({
-    origin: allowedOrigins.length > 0 ? allowedOrigins : "*",
+    origin: env.corsOrigins.length > 0 ? env.corsOrigins : "*",
     credentials: true,
   }),
 );
 
-// Rate limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
+  windowMs: 15 * 60 * 1000,
   limit: 100,
   standardHeaders: "draft-7",
   legacyHeaders: false,
@@ -40,14 +33,7 @@ app.use(limiter);
 
 // --------------- Routes ---------------
 
-app.get("/api/health", async (_req, res, next) => {
-  try {
-    await prisma.$queryRaw`SELECT 1`;
-    res.json({ status: "ok", db: "ok" });
-  } catch (err) {
-    next(err);
-  }
-});
+app.use("/api", routes);
 
 // --------------- Error handling ---------------
 
@@ -55,6 +41,6 @@ app.use(errorHandler);
 
 // --------------- Start ---------------
 
-app.listen(port, "0.0.0.0", () => {
-  console.log(`Backend listening on port ${port}`);
+app.listen(env.port, "0.0.0.0", () => {
+  console.log(`Backend listening on port ${env.port} [${env.nodeEnv}]`);
 });

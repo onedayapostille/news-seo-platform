@@ -1,11 +1,5 @@
 import { useEffect, useState } from "react";
-
-interface HealthResponse {
-  status: string;
-  db: string;
-}
-
-const API_URL = import.meta.env.VITE_API_URL || "";
+import { fetchHealth, type HealthResponse } from "./api/health";
 
 function App() {
   const [health, setHealth] = useState<HealthResponse | null>(null);
@@ -13,12 +7,8 @@ function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`${API_URL}/api/health`)
-      .then((res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json();
-      })
-      .then((data: HealthResponse) => setHealth(data))
+    fetchHealth()
+      .then(setHealth)
       .catch((err: Error) => setError(err.message))
       .finally(() => setLoading(false));
   }, []);
