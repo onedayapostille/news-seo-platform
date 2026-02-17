@@ -81,9 +81,14 @@ export default function Projects() {
               <td style={tdStyle}>{p.domain}</td>
               <td style={tdStyle}>{new Date(p.createdAt).toLocaleDateString()}</td>
               <td style={tdStyle}>
-                <button onClick={() => navigate(`/analyze?projectId=${p.id}`)}>
-                  Analyze URL
-                </button>
+                <div style={{ display: "flex", gap: "0.5rem" }}>
+                  <button onClick={() => navigate(`/analyze?projectId=${p.id}`)}>
+                    Analyze URL
+                  </button>
+                  <button onClick={() => navigate(`/crawler?projectId=${p.id}`)} style={{ backgroundColor: "#059669" }}>
+                    Crawl Site
+                  </button>
+                </div>
               </td>
             </tr>
           ))}

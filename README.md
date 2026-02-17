@@ -198,3 +198,41 @@ Phase 1 Checklist:
 - [ ] Frontend `/projects` page creates and lists projects
 - [ ] Frontend `/analyze` page runs analysis and displays results
 - [ ] Export JSON button downloads analysis as .json file
+
+## Phase 2 Verification
+
+Phase 2 adds a controlled site crawler. Test with:
+
+```bash
+# 1. Create project (if not already)
+curl -X POST http://localhost:4000/api/projects \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Example","domain":"example.com"}'
+
+# 2. Start crawl (use project id from step 1)
+curl -X POST http://localhost:4000/api/crawls/start \
+  -H "Content-Type: application/json" \
+  -d '{"projectId":"<PROJECT_ID>","startUrl":"https://example.com/","maxUrls":10,"maxDepth":1,"rateLimitMs":1000}'
+
+# 3. Check crawl status (use crawlRunId from step 2)
+curl http://localhost:4000/api/crawls/<CRAWL_RUN_ID>
+
+# 4. List crawled URLs
+curl "http://localhost:4000/api/crawls/<CRAWL_RUN_ID>/urls?limit=50&offset=0"
+
+# 5. Stop a running crawl
+curl -X POST http://localhost:4000/api/crawls/<CRAWL_RUN_ID>/stop
+```
+
+Phase 2 Checklist:
+
+- [ ] `POST /api/crawls/start` creates and starts a BFS crawl
+- [ ] Crawl enforces same-domain policy (rejects cross-domain startUrl)
+- [ ] Crawl respects maxUrls, maxDepth, rateLimitMs
+- [ ] Crawl skips non-HTML assets (images, pdf, css, js, etc.)
+- [ ] `GET /api/crawls/:id` returns status, progress, and summary counts
+- [ ] `GET /api/crawls/:id/urls` returns paginated URL records
+- [ ] `POST /api/crawls/:id/stop` stops an active crawl
+- [ ] Frontend `/crawler` page starts a crawl with configurable params
+- [ ] Frontend `/crawls/:id` page shows live progress, summary, URL table
+- [ ] Export JSON and Export CSV buttons work on completed crawls

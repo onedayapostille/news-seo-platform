@@ -19,13 +19,15 @@ model Project {
 }
 
 model CrawlRun {
-  id         String      @id @default(uuid())
-  projectId  String      @map("project_id")
-  status     String      @default("pending")
-  maxUrls    Int         @default(1) @map("max_urls")
-  maxDepth   Int         @default(0) @map("max_depth")
-  startedAt  DateTime    @default(now()) @map("started_at")
-  finishedAt DateTime?   @map("finished_at")
+  id           String      @id @default(uuid())
+  projectId    String      @map("project_id")
+  status       String      @default("pending")
+  startUrl     String?     @map("start_url")
+  maxUrls      Int         @default(1) @map("max_urls")
+  maxDepth     Int         @default(0) @map("max_depth")
+  startedAt    DateTime    @default(now()) @map("started_at")
+  finishedAt   DateTime?   @map("finished_at")
+  progressJson Json?       @map("progress_json")
 
   project    Project     @relation(fields: [projectId], references: [id])
   urlRecords UrlRecord[]

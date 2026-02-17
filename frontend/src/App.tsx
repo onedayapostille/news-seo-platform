@@ -1,6 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate, Link, useLocation } from "react-router-dom";
 import ProjectsPage from "./pages/Projects";
 import AnalyzePage from "./pages/Analyze";
+import CrawlerPage from "./pages/Crawler";
+import CrawlDetailPage from "./pages/CrawlDetail";
 
 function Nav() {
   const { pathname } = useLocation();
@@ -11,6 +13,9 @@ function Nav() {
       </NavLink>
       <NavLink to="/analyze" active={pathname.startsWith("/analyze")}>
         Analyze URL
+      </NavLink>
+      <NavLink to="/crawler" active={pathname === "/crawler"}>
+        Site Crawler
       </NavLink>
     </nav>
   );
@@ -58,6 +63,8 @@ function App() {
         <Routes>
           <Route path="/projects" element={<ProjectsPage />} />
           <Route path="/analyze" element={<AnalyzePage />} />
+          <Route path="/crawler" element={<CrawlerPage />} />
+          <Route path="/crawls/:id" element={<CrawlDetailPage />} />
           <Route path="*" element={<Navigate to="/projects" replace />} />
         </Routes>
       </main>
