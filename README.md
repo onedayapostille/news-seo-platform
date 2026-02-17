@@ -93,7 +93,7 @@ cd ..
 In separate terminals:
 
 ```bash
-# Backend (port 4000)
+# Backend (port 3001)
 npm run dev:backend
 
 # Frontend (port 5173)
@@ -109,7 +109,7 @@ Open http://localhost:5173 — you should see the health check page with both "B
 Or test the API directly:
 
 ```bash
-curl http://localhost:4000/api/health
+curl http://localhost:3001/api/health
 # {"status":"ok","db":"ok"}
 ```
 
@@ -129,14 +129,14 @@ docker compose up --build -d
 
 This starts:
 - **postgres** on port 5432
-- **backend** on port 4000 (runs `prisma migrate deploy` on startup)
+- **backend** on port 3001 (runs `prisma migrate deploy` on startup)
 - **frontend** on port 3000 (nginx serves built assets, proxies `/api` to backend)
 
 ### 3. Verify
 
 ```bash
 # Health check
-curl http://localhost:4000/api/health
+curl http://localhost:3001/api/health
 
 # Frontend
 open http://localhost:3000
@@ -153,7 +153,7 @@ docker compose down -v
 ## Verification Checklist
 
 - [ ] `npm install` at root installs both workspaces
-- [ ] `npm run dev:backend` starts Express on port 4000
+- [ ] `npm run dev:backend` starts Express on port 3001
 - [ ] `npm run dev:frontend` starts Vite on port 5173
 - [ ] `GET /api/health` returns `{"status":"ok","db":"ok"}`
 - [ ] Frontend displays backend and database status
@@ -171,20 +171,20 @@ Phase 1 adds single-URL SEO analysis. After setup, verify with:
 
 ```bash
 # 1. Create a project
-curl -X POST http://localhost:4000/api/projects \
+curl -X POST http://localhost:3001/api/projects \
   -H "Content-Type: application/json" \
   -d '{"name":"My Site","domain":"example.com"}'
 
 # 2. Analyze a URL (use the project id from step 1)
-curl -X POST http://localhost:4000/api/analyze-url \
+curl -X POST http://localhost:3001/api/analyze-url \
   -H "Content-Type: application/json" \
   -d '{"projectId":"<PROJECT_ID>","url":"https://example.com"}'
 
 # 3. Retrieve a stored record
-curl http://localhost:4000/api/url-records/<RECORD_ID>
+curl http://localhost:3001/api/url-records/<RECORD_ID>
 
 # 4. Retrieve a crawl run summary
-curl http://localhost:4000/api/crawl-runs/<CRAWL_RUN_ID>
+curl http://localhost:3001/api/crawl-runs/<CRAWL_RUN_ID>
 ```
 
 Phase 1 Checklist:
@@ -205,23 +205,23 @@ Phase 2 adds a controlled site crawler. Test with:
 
 ```bash
 # 1. Create project (if not already)
-curl -X POST http://localhost:4000/api/projects \
+curl -X POST http://localhost:3001/api/projects \
   -H "Content-Type: application/json" \
   -d '{"name":"Example","domain":"example.com"}'
 
 # 2. Start crawl (use project id from step 1)
-curl -X POST http://localhost:4000/api/crawls/start \
+curl -X POST http://localhost:3001/api/crawls/start \
   -H "Content-Type: application/json" \
   -d '{"projectId":"<PROJECT_ID>","startUrl":"https://example.com/","maxUrls":10,"maxDepth":1,"rateLimitMs":1000}'
 
 # 3. Check crawl status (use crawlRunId from step 2)
-curl http://localhost:4000/api/crawls/<CRAWL_RUN_ID>
+curl http://localhost:3001/api/crawls/<CRAWL_RUN_ID>
 
 # 4. List crawled URLs
-curl "http://localhost:4000/api/crawls/<CRAWL_RUN_ID>/urls?limit=50&offset=0"
+curl "http://localhost:3001/api/crawls/<CRAWL_RUN_ID>/urls?limit=50&offset=0"
 
 # 5. Stop a running crawl
-curl -X POST http://localhost:4000/api/crawls/<CRAWL_RUN_ID>/stop
+curl -X POST http://localhost:3001/api/crawls/<CRAWL_RUN_ID>/stop
 ```
 
 Phase 2 Checklist:
@@ -243,10 +243,10 @@ Phase 3 adds template clustering and a developer backlog engine. Test with:
 
 ```bash
 # 1. Run a crawl first (Phase 2), then generate clusters from a completed crawl
-curl -X POST http://localhost:4000/api/crawls/<CRAWL_RUN_ID>/generate-clusters
+curl -X POST http://localhost:3001/api/crawls/<CRAWL_RUN_ID>/generate-clusters
 
 # 2. List clusters for a crawl run
-curl http://localhost:4000/api/crawls/<CRAWL_RUN_ID>/clusters
+curl http://localhost:3001/api/crawls/<CRAWL_RUN_ID>/clusters
 ```
 
 Phase 3 Checklist:

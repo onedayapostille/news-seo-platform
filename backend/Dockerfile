@@ -1,8 +1,9 @@
-FROM node:20-bookworm-slim AS build
+# ---- Builder ----
+FROM node:20-bookworm-slim AS builder
 
 WORKDIR /app
 
-COPY package.json ./
+COPY package.json package-lock.json* ./
 COPY prisma ./prisma/
 
 RUN npm install
@@ -20,14 +21,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends wget && rm -rf 
 
 WORKDIR /app
 
-COPY package.json ./
+COPY package.json package-lock.json* ./
 COPY prisma ./prisma/
 
-RUN npm install --omit=dev
+RUN npm install --omit=dev && npx prisma generate
 
-COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=build /app/dist ./dist
+COPY --from=builder /app/dist ./dist
 
-EXPOSE 4000
+EXPOSE 3001
 
 CMD ["npm", "start"]
