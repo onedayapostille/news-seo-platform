@@ -1,92 +1,75 @@
-import { useEffect, useState } from "react";
-import { fetchHealth, type HealthResponse } from "./api/health";
+import { BrowserRouter, Routes, Route, Navigate, Link, useLocation } from "react-router-dom";
+import ProjectsPage from "./pages/Projects";
+import AnalyzePage from "./pages/Analyze";
+import CrawlerPage from "./pages/Crawler";
+import CrawlDetailPage from "./pages/CrawlDetail";
 
-function App() {
-  const [health, setHealth] = useState<HealthResponse | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchHealth()
-      .then(setHealth)
-      .catch((err: Error) => setError(err.message))
-      .finally(() => setLoading(false));
-  }, []);
-
+function Nav() {
+  const { pathname } = useLocation();
   return (
-    <main style={{ fontFamily: "system-ui, sans-serif", padding: "2rem" }}>
-      <h1>News SEO Platform</h1>
-      <h2>Health Check</h2>
-
-      {loading && <p>Checking backend status...</p>}
-
-      {error && (
-        <div style={{ color: "#dc2626" }}>
-          <strong>Error:</strong> {error}
-        </div>
-      )}
-
-      {health && (
-        <table
-          style={{
-            borderCollapse: "collapse",
-            marginTop: "1rem",
-          }}
-        >
-          <thead>
-            <tr>
-              <th style={thStyle}>Service</th>
-              <th style={thStyle}>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td style={tdStyle}>Backend</td>
-              <td style={tdStyle}>
-                <StatusBadge value={health.status} />
-              </td>
-            </tr>
-            <tr>
-              <td style={tdStyle}>Database</td>
-              <td style={tdStyle}>
-                <StatusBadge value={health.db} />
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      )}
-    </main>
+    <nav style={{ display: "flex", gap: "0.5rem", marginBottom: "1.5rem" }}>
+      <NavLink to="/projects" active={pathname === "/projects"}>
+        Projects
+      </NavLink>
+      <NavLink to="/analyze" active={pathname.startsWith("/analyze")}>
+        Analyze URL
+      </NavLink>
+      <NavLink to="/crawler" active={pathname === "/crawler"}>
+        Site Crawler
+      </NavLink>
+    </nav>
   );
 }
 
-function StatusBadge({ value }: { value: string }) {
-  const isOk = value === "ok";
+function NavLink({
+  to,
+  active,
+  children,
+}: {
+  to: string;
+  active: boolean;
+  children: React.ReactNode;
+}) {
   return (
-    <span
+    <Link
+      to={to}
       style={{
-        display: "inline-block",
-        padding: "0.25rem 0.75rem",
-        borderRadius: "9999px",
-        fontSize: "0.875rem",
-        fontWeight: 600,
-        color: "#fff",
-        backgroundColor: isOk ? "#16a34a" : "#dc2626",
+        padding: "0.4rem 0.8rem",
+        borderRadius: "0.375rem",
+        textDecoration: "none",
+        fontWeight: 500,
+        color: active ? "#fff" : "#374151",
+        backgroundColor: active ? "#2563eb" : "#f3f4f6",
       }}
     >
-      {value}
-    </span>
+      {children}
+    </Link>
   );
 }
 
-const thStyle: React.CSSProperties = {
-  textAlign: "left",
-  padding: "0.5rem 1rem",
-  borderBottom: "2px solid #e5e7eb",
-};
-
-const tdStyle: React.CSSProperties = {
-  padding: "0.5rem 1rem",
-  borderBottom: "1px solid #e5e7eb",
-};
+function App() {
+  return (
+    <BrowserRouter>
+      <main
+        style={{
+          fontFamily: "system-ui, sans-serif",
+          padding: "2rem",
+          maxWidth: "960px",
+          margin: "0 auto",
+        }}
+      >
+        <h1 style={{ marginBottom: "0.5rem" }}>News SEO Platform</h1>
+        <Nav />
+        <Routes>
+          <Route path="/projects" element={<ProjectsPage />} />
+          <Route path="/analyze" element={<AnalyzePage />} />
+          <Route path="/crawler" element={<CrawlerPage />} />
+          <Route path="/crawls/:id" element={<CrawlDetailPage />} />
+          <Route path="*" element={<Navigate to="/projects" replace />} />
+        </Routes>
+      </main>
+    </BrowserRouter>
+  );
+}
 
 export default App;

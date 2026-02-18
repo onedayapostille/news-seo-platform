@@ -7,14 +7,75 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Article {
-  id          Int      @id @default(autoincrement())
-  title       String
-  slug        String   @unique
-  content     String?
-  published   Boolean  @default(false)
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+model Project {
+  id        String     @id @default(uuid())
+  name      String
+  domain    String
+  createdAt DateTime   @default(now()) @map("created_at")
 
-  @@map("articles")
+  crawlRuns CrawlRun[]
+
+  @@map("projects")
+}
+
+model CrawlRun {
+  id           String      @id @default(uuid())
+  projectId    String      @map("project_id")
+  status       String      @default("pending")
+  startUrl     String?     @map("start_url")
+  maxUrls      Int         @default(1) @map("max_urls")
+  maxDepth     Int         @default(0) @map("max_depth")
+  startedAt    DateTime    @default(now()) @map("started_at")
+  finishedAt   DateTime?   @map("finished_at")
+  progressJson Json?       @map("progress_json")
+
+  project    Project     @relation(fields: [projectId], references: [id])
+  urlRecords UrlRecord[]
+  issueClusters IssueCluster[]
+
+  @@map("crawl_runs")
+}
+
+model UrlRecord {
+  id                 String    @id @default(uuid())
+  crawlRunId         String    @map("crawl_run_id")
+  url                String
+  normalizedUrl      String    @map("normalized_url")
+  section            String?
+  templateGroup      String?   @map("template_group")
+  statusCode         Int?      @map("status_code")
+  canonical          String?
+  robotsMeta         String?   @map("robots_meta")
+  title              String?
+  metaDescription    String?   @map("meta_description")
+  h1Count            Int?      @map("h1_count")
+  wordCount          Int?      @map("word_count")
+  internalLinksCount Int?      @map("internal_links_count")
+  externalLinksCount Int?      @map("external_links_count")
+  issuesJson         Json?     @map("issues_json")
+  analyzedAt         DateTime  @default(now()) @map("analyzed_at")
+
+  crawlRun           CrawlRun  @relation(fields: [crawlRunId], references: [id])
+
+  @@index([normalizedUrl])
+  @@map("url_records")
+}
+
+model IssueCluster {
+  id               String   @id @default(uuid())
+  crawlRunId       String   @map("crawl_run_id")
+  templateGroup    String?  @map("template_group")
+  section          String?
+  issueCode        String   @map("issue_code")
+  affectedCount    Int      @map("affected_count")
+  sampleUrlsJson   Json     @map("sample_urls_json")
+  rootCauseHint    String   @map("root_cause_hint")
+  devFixSuggestion String   @map("dev_fix_suggestion")
+  validationSteps  String   @map("validation_steps")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  crawlRun         CrawlRun @relation(fields: [crawlRunId], references: [id])
+
+  @@index([crawlRunId])
+  @@map("issue_clusters")
 }

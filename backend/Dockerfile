@@ -1,33 +1,48 @@
-FROM node:22-alpine AS build
+# ---- Builder ----
+FROM node:20-bookworm-slim AS builder
 
 WORKDIR /app
 
-COPY package.json ./
-COPY prisma ./prisma/
+COPY package.json package-lock.json ./
+COPY backend/package.json ./backend/
+COPY backend/prisma ./backend/prisma/
 
-RUN npm install
+RUN npm ci --workspace=backend
 
-COPY tsconfig.json ./
-COPY src ./src/
+WORKDIR /app/backend
+
+COPY backend/tsconfig.json ./
+COPY backend/src ./src/
 
 RUN npx prisma generate
 RUN npx tsc
 
 # ---- Production ----
-FROM node:22-alpine
+FROM node:20-bookworm-slim
 
-RUN apk add --no-cache wget
+RUN apt-get update && apt-get install -y --no-install-recommends wget \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN groupadd --gid 1001 appgroup \
+    && useradd --uid 1001 --gid appgroup --shell /bin/false --create-home appuser
 
 WORKDIR /app
 
-COPY package.json ./
-COPY prisma ./prisma/
+COPY package.json package-lock.json ./
+COPY backend/package.json ./backend/
+COPY backend/prisma ./backend/prisma/
 
-RUN npm install --omit=dev
+RUN npm ci --workspace=backend --omit=dev && \
+    cd backend && npx prisma generate
 
-COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=build /app/dist ./dist
+WORKDIR /app/backend
 
-EXPOSE 4000
+COPY --from=builder /app/backend/dist ./dist
+
+RUN chown -R appuser:appgroup /app
+
+USER appuser
+
+EXPOSE 3000
 
 CMD ["npm", "start"]
