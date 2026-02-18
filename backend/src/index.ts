@@ -38,6 +38,18 @@ app.get("/", (_req, res) => {
   res.json({ status: "ok" });
 });
 
+// --------------- DB check ---------------
+
+app.get("/api/db-check", async (_req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.json({ db: "ok" });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "unknown error";
+    res.json({ db: "error", message });
+  }
+});
+
 // --------------- Routes ---------------
 
 app.use("/api", routes);
