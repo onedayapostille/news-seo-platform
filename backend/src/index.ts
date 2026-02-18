@@ -32,6 +32,12 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
+// --------------- Health check (root) ---------------
+
+app.get("/", (_req, res) => {
+  res.json({ status: "ok" });
+});
+
 // --------------- Routes ---------------
 
 app.use("/api", routes);
