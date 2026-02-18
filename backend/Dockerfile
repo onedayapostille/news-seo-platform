@@ -3,12 +3,13 @@ FROM node:20-bookworm-slim AS builder
 
 WORKDIR /app
 
-COPY package-lock.json ./
+COPY package.json package-lock.json ./
 COPY backend/package.json ./backend/
 COPY backend/prisma ./backend/prisma/
 
+RUN npm ci --workspace=backend
+
 WORKDIR /app/backend
-RUN npm ci
 
 COPY backend/tsconfig.json ./
 COPY backend/src ./src/
@@ -27,13 +28,14 @@ RUN groupadd --gid 1001 appgroup \
 
 WORKDIR /app
 
-COPY package-lock.json ./
+COPY package.json package-lock.json ./
 COPY backend/package.json ./backend/
 COPY backend/prisma ./backend/prisma/
 
+RUN npm ci --workspace=backend --omit=dev && \
+    cd backend && npx prisma generate
+
 WORKDIR /app/backend
-ENV NODE_ENV=production
-RUN npm ci --omit=dev && npx prisma generate
 
 COPY --from=builder /app/backend/dist ./dist
 

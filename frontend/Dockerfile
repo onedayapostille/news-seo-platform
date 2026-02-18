@@ -6,11 +6,12 @@ WORKDIR /app
 ARG VITE_API_URL
 ENV VITE_API_URL=$VITE_API_URL
 
-COPY package-lock.json ./
+COPY package.json package-lock.json ./
 COPY frontend/package.json ./frontend/
 
+RUN npm ci --workspace=frontend
+
 WORKDIR /app/frontend
-RUN npm ci
 
 COPY frontend/tsconfig.json frontend/vite.config.ts frontend/index.html ./
 COPY frontend/src ./src/
