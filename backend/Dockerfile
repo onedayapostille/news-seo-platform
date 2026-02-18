@@ -3,13 +3,15 @@ FROM node:20-bookworm-slim AS builder
 
 WORKDIR /app
 
-COPY package.json package-lock.json* ./
-COPY prisma ./prisma/
+COPY package-lock.json ./
+COPY backend/package.json ./backend/
+COPY backend/prisma ./backend/prisma/
 
-RUN npm install
+WORKDIR /app/backend
+RUN npm ci
 
-COPY tsconfig.json ./
-COPY src ./src/
+COPY backend/tsconfig.json ./
+COPY backend/src ./src/
 
 RUN npx prisma generate
 RUN npx tsc
@@ -25,13 +27,15 @@ RUN groupadd --gid 1001 appgroup \
 
 WORKDIR /app
 
-COPY package.json package-lock.json* ./
-COPY prisma ./prisma/
+COPY package-lock.json ./
+COPY backend/package.json ./backend/
+COPY backend/prisma ./backend/prisma/
 
+WORKDIR /app/backend
 ENV NODE_ENV=production
 RUN npm ci --omit=dev && npx prisma generate
 
-COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/backend/dist ./dist
 
 RUN chown -R appuser:appgroup /app
 
