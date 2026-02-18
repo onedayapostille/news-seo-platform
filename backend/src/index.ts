@@ -38,9 +38,7 @@ app.get("/", (_req, res) => {
   res.json({ status: "ok" });
 });
 
-// --------------- DB check ---------------
-
-app.get("/api/db-check", async (_req, res) => {
+app.get("/db-check", async (_req, res) => {
   try {
     await prisma.$queryRaw`SELECT 1`;
     res.json({ db: "ok" });
