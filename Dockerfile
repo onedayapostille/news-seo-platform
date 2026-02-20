@@ -39,11 +39,13 @@ RUN npm ci --workspace=backend --omit=dev && \
 WORKDIR /app/backend
 
 COPY --from=builder /app/backend/dist ./dist
+COPY entrypoint.sh /app/backend/entrypoint.sh
 
-RUN chown -R appuser:appgroup /app
+RUN chmod +x /app/backend/entrypoint.sh && \
+    chown -R appuser:appgroup /app
 
 USER appuser
 
 EXPOSE 3000
 
-CMD ["sh", "-c", "export DATABASE_URL=\"${VAR_1}\" && npm start"]
+ENTRYPOINT ["/app/backend/entrypoint.sh"]
