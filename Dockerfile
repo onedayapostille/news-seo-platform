@@ -34,7 +34,7 @@ COPY backend/package.json ./backend/
 COPY backend/prisma ./backend/prisma/
 
 RUN npm ci --workspace=backend --omit=dev && \
-    cd backend && npx prisma generate
+    cd backend && DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy" npx prisma generate
 
 WORKDIR /app/backend
 
