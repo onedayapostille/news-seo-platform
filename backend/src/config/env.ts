@@ -1,7 +1,7 @@
 export const env = {
   nodeEnv: process.env.NODE_ENV || "development",
   port: parseInt(process.env.PORT || "3000", 10),
-  databaseUrl: "postgresql://newsseo:d766ea1b6fc2e8daf721fc468a36d806@postgres-abaec58b.dublyo.co:5432/news_seo_platform?sslmode=require",
+  databaseUrl: process.env.VAR_1 || process.env.DATABASE_URL || "",
   corsOrigins: (process.env.CORS_ORIGINS || "")
     .split(",")
     .map((o) => o.trim())
