@@ -15,7 +15,7 @@ WORKDIR /app/backend
 COPY backend/tsconfig.json ./
 COPY backend/src ./src/
 
-RUN npx prisma generate
+RUN DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy" npx prisma generate
 RUN npx tsc
 
 # ---- Production ----
@@ -46,4 +46,4 @@ USER appuser
 
 EXPOSE 3000
 
-CMD ["npm", "start"]
+CMD ["sh", "-c", "export DATABASE_URL=\"${VAR_1:-$DATABASE_URL}\"; npm start"]
