@@ -44,6 +44,9 @@ RUN chown -R appuser:appgroup /app
 
 USER appuser
 
+# Default DB URL — overridden at runtime by VAR_1 if Dublyo injects it
+ENV DATABASE_URL="postgresql://newsseo:d766ea1b6fc2e8daf721fc468a36d806@postgres-abaec58b.dublyo.co:5432/news_seo_platform?sslmode=require"
+
 EXPOSE 3000
 
 CMD ["sh", "-c", "export DATABASE_URL=\"${VAR_1:-$DATABASE_URL}\"; npm start"]
