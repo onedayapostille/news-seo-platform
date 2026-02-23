@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate, Link, useLocation } from "react-router-dom";
+import DashboardPage from "./pages/Dashboard";
 import ProjectsPage from "./pages/Projects";
 import AnalyzePage from "./pages/Analyze";
 import CrawlerPage from "./pages/Crawler";
@@ -7,15 +8,18 @@ import CrawlDetailPage from "./pages/CrawlDetail";
 function Nav() {
   const { pathname } = useLocation();
   return (
-    <nav style={{ display: "flex", gap: "0.5rem", marginBottom: "1.5rem" }}>
+    <nav style={{ display: "flex", gap: "0.5rem", marginBottom: "1.5rem", flexWrap: "wrap" }}>
+      <NavLink to="/" active={pathname === "/"}>
+        Dashboard
+      </NavLink>
+      <NavLink to="/analyze" active={pathname.startsWith("/analyze")}>
+        SEO Analyzer
+      </NavLink>
       <NavLink to="/projects" active={pathname === "/projects"}>
         Projects
       </NavLink>
-      <NavLink to="/analyze" active={pathname.startsWith("/analyze")}>
-        Analyze URL
-      </NavLink>
       <NavLink to="/crawler" active={pathname === "/crawler"}>
-        Site Crawler
+        Crawler
       </NavLink>
     </nav>
   );
@@ -61,11 +65,12 @@ function App() {
         <h1 style={{ marginBottom: "0.5rem" }}>News SEO Platform</h1>
         <Nav />
         <Routes>
-          <Route path="/projects" element={<ProjectsPage />} />
+          <Route path="/" element={<DashboardPage />} />
           <Route path="/analyze" element={<AnalyzePage />} />
+          <Route path="/projects" element={<ProjectsPage />} />
           <Route path="/crawler" element={<CrawlerPage />} />
           <Route path="/crawls/:id" element={<CrawlDetailPage />} />
-          <Route path="*" element={<Navigate to="/projects" replace />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
     </BrowserRouter>

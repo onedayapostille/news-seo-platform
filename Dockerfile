@@ -1,6 +1,24 @@
-# Root Dockerfile for Dublyo deployment (backend service)
-# ---- Builder ----
-FROM node:20-bookworm-slim AS builder
+# Root Dockerfile — single container for Dublyo (backend + frontend)
+
+# ---- Frontend builder ----
+FROM node:20-bookworm-slim AS frontend-builder
+
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+COPY frontend/package.json ./frontend/
+
+RUN npm ci --workspace=frontend
+
+WORKDIR /app/frontend
+
+COPY frontend/tsconfig.json frontend/vite.config.ts frontend/index.html ./
+COPY frontend/src ./src/
+
+RUN npm run build
+
+# ---- Backend builder ----
+FROM node:20-bookworm-slim AS backend-builder
 
 WORKDIR /app
 
@@ -15,7 +33,7 @@ WORKDIR /app/backend
 COPY backend/tsconfig.json ./
 COPY backend/src ./src/
 
-RUN npx prisma generate
+RUN DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy" npx prisma generate
 RUN npx tsc
 
 # ---- Production ----
@@ -38,7 +56,8 @@ RUN npm ci --workspace=backend --omit=dev && \
 
 WORKDIR /app/backend
 
-COPY --from=builder /app/backend/dist ./dist
+COPY --from=backend-builder /app/backend/dist ./dist
+COPY --from=frontend-builder /app/frontend/dist ../frontend/dist
 
 RUN chown -R appuser:appgroup /app
 
@@ -46,4 +65,5 @@ USER appuser
 
 EXPOSE 3000
 
-CMD ["npm", "start"]
+# prisma migrate deploy only runs if DATABASE_URL is set
+CMD ["sh", "-c", "if [ -n \"$DATABASE_URL\" ]; then npx prisma migrate deploy 2>/dev/null || true; fi && node dist/index.js"]

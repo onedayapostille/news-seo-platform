@@ -1,12 +1,13 @@
 import { Router } from "express";
-import { prisma } from "../prisma";
+import { getPrisma } from "../prisma";
+import { requireDb } from "../middleware/requireDb";
 
 const router = Router();
 
-router.get("/crawl-runs/:id", async (req, res, next) => {
+router.get("/crawl-runs/:id", requireDb, async (req, res, next) => {
   try {
-    const run = await prisma.crawlRun.findUnique({
-      where: { id: req.params.id },
+    const run = await getPrisma().crawlRun.findUnique({
+      where: { id: req.params.id as string },
       include: { urlRecords: true, project: true },
     });
     if (!run) {

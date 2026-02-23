@@ -1,11 +1,17 @@
-import { prisma } from "../prisma";
+import { hasDatabase, checkDb } from "../prisma";
 
 export interface HealthStatus {
   status: string;
   db: string;
+  reason?: string;
 }
 
 export async function healthCheck(): Promise<HealthStatus> {
-  await prisma.$queryRaw`SELECT 1`;
-  return { status: "ok", db: "ok" };
+  if (!hasDatabase()) {
+    return { status: "ok", db: "skipped", reason: "DATABASE_URL not set" };
+  }
+  const ok = await checkDb();
+  return ok
+    ? { status: "ok", db: "ok" }
+    : { status: "ok", db: "error" };
 }

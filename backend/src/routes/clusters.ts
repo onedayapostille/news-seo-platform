@@ -1,11 +1,15 @@
 import { Router } from "express";
-import { prisma } from "../prisma";
+import { getPrisma } from "../prisma";
+import { requireDb } from "../middleware/requireDb";
 import { generateClusters } from "../modules/clustering/clusterEngine";
 
 const router = Router();
 
+router.use(requireDb);
+
 router.post("/crawls/:id/generate-clusters", async (req, res, next) => {
   try {
+    const prisma = getPrisma();
     const crawlRun = await prisma.crawlRun.findUnique({
       where: { id: req.params.id },
     });
@@ -33,6 +37,7 @@ router.post("/crawls/:id/generate-clusters", async (req, res, next) => {
 
 router.get("/crawls/:id/clusters", async (req, res, next) => {
   try {
+    const prisma = getPrisma();
     const crawlRun = await prisma.crawlRun.findUnique({
       where: { id: req.params.id },
     });
