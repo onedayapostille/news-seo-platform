@@ -1,20 +1,12 @@
-import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useState } from "react";
 import { api } from "../api/client";
-
-interface Project {
-  id: string;
-  name: string;
-  domain: string;
-}
 
 interface Issue {
   code: string;
   message: string;
 }
 
-interface UrlRecord {
-  id: string;
+interface AnalysisResult {
   url: string;
   normalizedUrl: string;
   statusCode: number | null;
@@ -26,26 +18,20 @@ interface UrlRecord {
   wordCount: number | null;
   internalLinksCount: number | null;
   externalLinksCount: number | null;
+  hasJsonLd?: boolean;
   templateGroup: string | null;
   section: string | null;
-  issuesJson: Issue[] | null;
-  issues?: Issue[];
-  analyzedAt: string;
+  issues: Issue[];
+  issuesJson?: Issue[];
+  savedToDb?: boolean;
 }
 
 export default function Analyze() {
-  const [searchParams] = useSearchParams();
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [projectId, setProjectId] = useState(searchParams.get("projectId") || "");
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<UrlRecord | null>(null);
+  const [result, setResult] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showRaw, setShowRaw] = useState(false);
-
-  useEffect(() => {
-    api.get<Project[]>("/api/projects").then(setProjects).catch(console.error);
-  }, []);
 
   const analyze = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,7 +39,7 @@ export default function Analyze() {
     setResult(null);
     setLoading(true);
     try {
-      const data = await api.post<UrlRecord>("/api/analyze-url", { projectId, url });
+      const data = await api.post<AnalysisResult>("/api/analyze", { url });
       setResult(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Analysis failed");
@@ -72,28 +58,23 @@ export default function Analyze() {
     URL.revokeObjectURL(a.href);
   };
 
-  const issues = result?.issues || (result?.issuesJson as Issue[]) || [];
+  const issues = result?.issues || result?.issuesJson || [];
 
   return (
     <div>
-      <h2>Analyze URL</h2>
+      <h2>Technical SEO Analyzer</h2>
+      <p style={{ color: "#6b7280", marginBottom: "1rem" }}>
+        Analyze any URL for SEO issues. No database required.
+      </p>
 
       <form onSubmit={analyze} style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem", flexWrap: "wrap" }}>
-        <select value={projectId} onChange={(e) => setProjectId(e.target.value)} required>
-          <option value="">Select project...</option>
-          {projects.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name} ({p.domain})
-            </option>
-          ))}
-        </select>
         <input
           type="url"
           placeholder="https://example.com/page"
           value={url}
           onChange={(e) => setUrl(e.target.value)}
           required
-          style={{ flex: 1, minWidth: "200px" }}
+          style={{ flex: 1, minWidth: "280px" }}
         />
         <button type="submit" disabled={loading}>
           {loading ? "Analyzing..." : "Analyze"}
@@ -108,12 +89,33 @@ export default function Analyze() {
 
       {result && (
         <div>
-          <h3>Results</h3>
+          <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginBottom: "1rem" }}>
+            <h3 style={{ margin: 0 }}>Results</h3>
+            <span style={{
+              fontSize: "0.75rem",
+              padding: "2px 8px",
+              borderRadius: 4,
+              backgroundColor: result.statusCode === 200 ? "#dcfce7" : "#fef2f2",
+              color: result.statusCode === 200 ? "#166534" : "#991b1b",
+            }}>
+              HTTP {result.statusCode}
+            </span>
+            {result.savedToDb === false && (
+              <span style={{
+                fontSize: "0.75rem",
+                padding: "2px 8px",
+                borderRadius: 4,
+                backgroundColor: "#fef3c7",
+                color: "#92400e",
+              }}>
+                Not saved (no DB)
+              </span>
+            )}
+          </div>
 
           <table style={{ borderCollapse: "collapse", width: "100%", marginBottom: "1rem" }}>
             <tbody>
               {([
-                ["Status Code", result.statusCode],
                 ["URL", result.url],
                 ["Title", result.title],
                 ["Meta Description", result.metaDescription],
@@ -123,6 +125,7 @@ export default function Analyze() {
                 ["Word Count", result.wordCount],
                 ["Internal Links", result.internalLinksCount],
                 ["External Links", result.externalLinksCount],
+                ["JSON-LD", result.hasJsonLd ? "Yes" : "No"],
                 ["Template", result.templateGroup],
                 ["Section", result.section],
               ] as [string, unknown][]).map(([label, value]) => (

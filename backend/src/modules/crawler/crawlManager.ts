@@ -1,5 +1,5 @@
 import { Prisma } from "@prisma/client";
-import { prisma } from "../../prisma";
+import { getPrisma } from "../../prisma";
 import { httpFetch } from "../../services/httpFetch";
 import { parseHtml } from "../../services/htmlParse";
 import { normalizeUrl } from "../../services/urlNormalize";
@@ -33,7 +33,7 @@ export async function startCrawl(opts: CrawlOptions): Promise<void> {
   activeCrawls.set(opts.crawlRunId, state);
 
   try {
-    await prisma.crawlRun.update({
+    await getPrisma().crawlRun.update({
       where: { id: opts.crawlRunId },
       data: { status: "running" },
     });
@@ -76,7 +76,7 @@ export async function startCrawl(opts: CrawlOptions): Promise<void> {
         const pathParts = finalParsed.pathname.split("/").filter(Boolean);
         const section = pathParts.length > 0 ? pathParts[0] : null;
 
-        await prisma.urlRecord.create({
+        await getPrisma().urlRecord.create({
           data: {
             crawlRunId: opts.crawlRunId,
             url: fetchResult.finalUrl,
@@ -98,7 +98,7 @@ export async function startCrawl(opts: CrawlOptions): Promise<void> {
 
         processed++;
 
-        await prisma.crawlRun.update({
+        await getPrisma().crawlRun.update({
           where: { id: opts.crawlRunId },
           data: {
             progressJson: {
@@ -133,7 +133,7 @@ export async function startCrawl(opts: CrawlOptions): Promise<void> {
       }
     }
 
-    await prisma.crawlRun.update({
+    await getPrisma().crawlRun.update({
       where: { id: opts.crawlRunId },
       data: {
         status: state.stopped ? "stopped" : "done",
@@ -147,7 +147,7 @@ export async function startCrawl(opts: CrawlOptions): Promise<void> {
     });
   } catch (err) {
     console.error(`[Crawl ${opts.crawlRunId}] Fatal error:`, err);
-    await prisma.crawlRun
+    await getPrisma().crawlRun
       .update({
         where: { id: opts.crawlRunId },
         data: { status: "failed", finishedAt: new Date() },

@@ -1,11 +1,15 @@
 import { Router } from "express";
-import { prisma } from "../prisma";
+import { getPrisma } from "../prisma";
+import { requireDb } from "../middleware/requireDb";
 import { startCrawl, stopCrawl } from "../modules/crawler/crawlManager";
 
 const router = Router();
 
+router.use(requireDb);
+
 router.post("/crawls/start", async (req, res, next) => {
   try {
+    const prisma = getPrisma();
     const { projectId, startUrl, maxUrls = 200, maxDepth = 2, rateLimitMs = 1000 } = req.body;
 
     if (!projectId || !startUrl) {
@@ -32,7 +36,6 @@ router.post("/crawls/start", async (req, res, next) => {
       return;
     }
 
-    // Enforce same-domain: startUrl host must match project domain
     const urlHost = parsed.hostname;
     if (urlHost !== project.domain && !urlHost.endsWith("." + project.domain)) {
       res.status(400).json({
@@ -55,7 +58,6 @@ router.post("/crawls/start", async (req, res, next) => {
       },
     });
 
-    // Fire and forget — crawl runs in the background
     startCrawl({
       crawlRunId: crawlRun.id,
       projectId,
@@ -73,6 +75,7 @@ router.post("/crawls/start", async (req, res, next) => {
 
 router.get("/crawls/:id", async (req, res, next) => {
   try {
+    const prisma = getPrisma();
     const crawlRun = await prisma.crawlRun.findUnique({
       where: { id: req.params.id },
       include: { project: true },
@@ -94,7 +97,6 @@ router.get("/crawls/:id", async (req, res, next) => {
     for (const r of records) {
       const code = String(r.statusCode || "unknown");
       statusCodes[code] = (statusCodes[code] || 0) + 1;
-
       if (Array.isArray(r.issuesJson)) {
         for (const issue of r.issuesJson as Array<{ code: string }>) {
           issueCounts[issue.code] = (issueCounts[issue.code] || 0) + 1;
@@ -120,6 +122,7 @@ router.get("/crawls/:id", async (req, res, next) => {
 
 router.get("/crawls/:id/urls", async (req, res, next) => {
   try {
+    const prisma = getPrisma();
     const limit = Math.min(parseInt(req.query.limit as string) || 50, 5000);
     const offset = parseInt(req.query.offset as string) || 0;
 

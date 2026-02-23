@@ -1,12 +1,13 @@
 import { Router } from "express";
-import { prisma } from "../prisma";
+import { getPrisma } from "../prisma";
+import { requireDb } from "../middleware/requireDb";
 
 const router = Router();
 
-router.get("/url-records/:id", async (req, res, next) => {
+router.get("/url-records/:id", requireDb, async (req, res, next) => {
   try {
-    const record = await prisma.urlRecord.findUnique({
-      where: { id: req.params.id },
+    const record = await getPrisma().urlRecord.findUnique({
+      where: { id: req.params.id as string },
     });
     if (!record) {
       res.status(404).json({ error: "URL record not found" });

@@ -1,4 +1,4 @@
-import { prisma } from "../../prisma";
+import { getPrisma } from "../../prisma";
 import { Prisma } from "@prisma/client";
 
 interface Issue {
@@ -104,10 +104,10 @@ function parseKey(key: string): ClusterKey {
 
 export async function generateClusters(crawlRunId: string): Promise<number> {
   // Delete any existing clusters for this run (idempotent)
-  await prisma.issueCluster.deleteMany({ where: { crawlRunId } });
+  await getPrisma().issueCluster.deleteMany({ where: { crawlRunId } });
 
   // Fetch all URL records for the crawl run
-  const records = await prisma.urlRecord.findMany({
+  const records = await getPrisma().urlRecord.findMany({
     where: { crawlRunId },
     select: {
       url: true,
@@ -159,7 +159,7 @@ export async function generateClusters(crawlRunId: string): Promise<number> {
   }
 
   if (creates.length > 0) {
-    await prisma.issueCluster.createMany({ data: creates });
+    await getPrisma().issueCluster.createMany({ data: creates });
   }
 
   return creates.length;

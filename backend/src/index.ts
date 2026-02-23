@@ -1,3 +1,4 @@
+import path from "path";
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
@@ -6,19 +7,19 @@ import rateLimit from "express-rate-limit";
 import { env } from "./config/env";
 import routes from "./routes";
 import { errorHandler } from "./middleware/errorHandler";
-import { prisma } from "./prisma";
+import { checkDb, disconnectPrisma, hasDatabase } from "./prisma";
 
 const app = express();
 
 // --------------- Middleware ---------------
 
-app.use(helmet());
+app.use(helmet({ contentSecurityPolicy: false }));
 app.use(morgan(env.nodeEnv === "production" ? "combined" : "dev"));
 app.use(express.json({ limit: "1mb" }));
 
 app.use(
   cors({
-    origin: env.corsOrigins.length > 0 ? env.corsOrigins : false,
+    origin: env.corsOrigins.length > 0 ? env.corsOrigins : true,
     credentials: true,
   }),
 );
@@ -32,23 +33,7 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-// --------------- Health check (root) ---------------
-
-app.get("/", (_req, res) => {
-  res.json({ status: "ok" });
-});
-
-app.get("/db-check", async (_req, res) => {
-  try {
-    await prisma.$queryRaw`SELECT 1`;
-    res.json({ db: "ok" });
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "unknown error";
-    res.json({ db: "error", message });
-  }
-});
-
-// --------------- Routes ---------------
+// --------------- API routes ---------------
 
 app.use("/api", routes);
 
@@ -56,24 +41,49 @@ app.use("/api", routes);
 
 app.use(errorHandler);
 
-// --------------- Start ---------------
+// --------------- Serve frontend (production) ---------------
 
-const server = app.listen(env.port, "0.0.0.0", () => {
-  console.log(`Backend listening on port ${env.port} [${env.nodeEnv}]`);
+const frontendDir = path.join(__dirname, "../../frontend/dist");
+app.use(express.static(frontendDir));
+app.get("*", (_req, res, next) => {
+  // Only serve index.html for non-API routes
+  if (_req.path.startsWith("/api")) return next();
+  res.sendFile(path.join(frontendDir, "index.html"), (err) => {
+    if (err) {
+      // Frontend not built — return a simple JSON response
+      res.json({ status: "ok", message: "API is running. Frontend not built yet." });
+    }
+  });
 });
 
-// --------------- Graceful shutdown ---------------
+// --------------- Start ---------------
 
-function shutdown(signal: string) {
-  console.log(`${signal} received — shutting down`);
-  server.close(async () => {
-    await prisma.$disconnect();
-    console.log("Connections closed — exiting");
-    process.exit(0);
+async function start() {
+  // Try connecting to DB on startup (non-blocking)
+  if (hasDatabase()) {
+    const ok = await checkDb();
+    console.log(`Database: ${ok ? "connected" : "unreachable (will retry on requests)"}`);
+  } else {
+    console.log("Database: skipped (DATABASE_URL not set)");
+  }
+
+  const server = app.listen(env.port, "0.0.0.0", () => {
+    console.log(`Backend listening on port ${env.port} [${env.nodeEnv}]`);
+    if (env.authDisabled) console.log("AUTH_DISABLED=true — no login required");
   });
-  // Force exit after 10s if connections don't drain
-  setTimeout(() => process.exit(1), 10_000);
+
+  function shutdown(signal: string) {
+    console.log(`${signal} received — shutting down`);
+    server.close(async () => {
+      await disconnectPrisma();
+      console.log("Connections closed — exiting");
+      process.exit(0);
+    });
+    setTimeout(() => process.exit(1), 10_000);
+  }
+
+  process.on("SIGTERM", () => shutdown("SIGTERM"));
+  process.on("SIGINT", () => shutdown("SIGINT"));
 }
 
-process.on("SIGTERM", () => shutdown("SIGTERM"));
-process.on("SIGINT", () => shutdown("SIGINT"));
+start();

@@ -1,6 +1,24 @@
-# Root Dockerfile for Dublyo deployment (backend service)
-# ---- Builder ----
-FROM node:20-bookworm-slim AS builder
+# Root Dockerfile — single container for Dublyo (backend + frontend)
+
+# ---- Frontend builder ----
+FROM node:20-bookworm-slim AS frontend-builder
+
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+COPY frontend/package.json ./frontend/
+
+RUN npm ci --workspace=frontend
+
+WORKDIR /app/frontend
+
+COPY frontend/tsconfig.json frontend/vite.config.ts frontend/index.html ./
+COPY frontend/src ./src/
+
+RUN npm run build
+
+# ---- Backend builder ----
+FROM node:20-bookworm-slim AS backend-builder
 
 WORKDIR /app
 
@@ -38,15 +56,14 @@ RUN npm ci --workspace=backend --omit=dev && \
 
 WORKDIR /app/backend
 
-COPY --from=builder /app/backend/dist ./dist
+COPY --from=backend-builder /app/backend/dist ./dist
+COPY --from=frontend-builder /app/frontend/dist ../frontend/dist
 
 RUN chown -R appuser:appgroup /app
 
 USER appuser
 
-# Default DB URL — overridden at runtime by VAR_1 if Dublyo injects it
-ENV DATABASE_URL="postgresql://newsseo:d766ea1b6fc2e8daf721fc468a36d806@postgres-abaec58b.dublyo.co:5432/news_seo_platform?sslmode=require"
-
 EXPOSE 3000
 
-CMD ["sh", "-c", "export DATABASE_URL=\"${VAR_1:-$DATABASE_URL}\"; npm start"]
+# prisma migrate deploy only runs if DATABASE_URL is set
+CMD ["sh", "-c", "if [ -n \"$DATABASE_URL\" ]; then npx prisma migrate deploy 2>/dev/null || true; fi && node dist/index.js"]
