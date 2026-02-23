@@ -11,6 +11,9 @@ import { checkDb, disconnectPrisma, hasDatabase } from "./prisma";
 
 const app = express();
 
+// Trust reverse proxy (Dublyo, nginx, etc.)
+app.set("trust proxy", 1);
+
 // --------------- Middleware ---------------
 
 app.use(helmet({ contentSecurityPolicy: false }));
