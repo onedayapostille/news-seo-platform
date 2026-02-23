@@ -63,6 +63,8 @@ RUN chown -R appuser:appgroup /app
 
 USER appuser
 
+ENV NODE_ENV=production
+
 EXPOSE 3000
 
 # prisma migrate deploy only runs if DATABASE_URL is set
